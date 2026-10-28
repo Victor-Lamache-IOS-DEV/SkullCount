@@ -2,6 +2,38 @@ import SwiftUI
 import Charts
 import SwiftData
 
+// MARK: - Dedicated Chart Data Models (Precomputed to avoid Swift type-checker timeouts)
+
+struct ScorePointData: Identifiable {
+    let id = UUID()
+    let playerName: String
+    let colorHex: String
+    let roundNumber: Int
+    let score: Int
+}
+
+struct RankPointData: Identifiable {
+    let id = UUID()
+    let playerName: String
+    let colorHex: String
+    let roundNumber: Int
+    let rank: Int
+}
+
+struct RoundBarData: Identifiable {
+    let id = UUID()
+    let playerName: String
+    let roundLabel: String
+    let points: Int
+}
+
+struct TableBidBarData: Identifiable {
+    let id = UUID()
+    let roundLabel: String
+    let totalBids: Int
+    let cardsDealt: Int
+}
+
 public struct GameChartsView: View {
     let game: Game
     @State private var selectedMetric: ChartMetric = .cumulativeScore
@@ -14,6 +46,66 @@ public struct GameChartsView: View {
         case heatmap = "Heatmap"
         
         var id: String { rawValue }
+    }
+    
+    public init(game: Game) {
+        self.game = game
+    }
+    
+    // MARK: - Precomputed Data
+    
+    private var scorePoints: [ScorePointData] {
+        var points: [ScorePointData] = []
+        for part in game.sortedParticipants {
+            let name = part.player?.name ?? "Joueur"
+            let color = part.player?.colorHex ?? "#FFFFFF"
+            // Start at 0
+            points.append(ScorePointData(playerName: name, colorHex: color, roundNumber: 0, score: 0))
+            let sortedEntries = part.roundEntries.sorted { ($0.round?.number ?? 0) < ($1.round?.number ?? 0) }
+            for e in sortedEntries {
+                let rNum = e.round?.number ?? 0
+                points.append(ScorePointData(playerName: name, colorHex: color, roundNumber: rNum, score: e.cumulativeScore))
+            }
+        }
+        return points
+    }
+    
+    private var rankPoints: [RankPointData] {
+        var points: [RankPointData] = []
+        let rounds = game.sortedRounds
+        for part in game.sortedParticipants {
+            let name = part.player?.name ?? "Joueur"
+            let color = part.player?.colorHex ?? "#FFFFFF"
+            for round in rounds {
+                let roundEntries = round.entries.sorted { $0.cumulativeScore > $1.cumulativeScore }
+                if let rankIndex = roundEntries.firstIndex(where: { $0.participant?.id == part.id }) {
+                    points.append(RankPointData(playerName: name, colorHex: color, roundNumber: round.number, rank: rankIndex + 1))
+                }
+            }
+        }
+        return points
+    }
+    
+    private var roundBars: [RoundBarData] {
+        var bars: [RoundBarData] = []
+        for round in game.sortedRounds {
+            let label = "M\(round.number)"
+            for entry in round.entries {
+                let name = entry.participant?.player?.name ?? "Joueur"
+                bars.append(RoundBarData(playerName: name, roundLabel: label, points: entry.points))
+            }
+        }
+        return bars
+    }
+    
+    private var tableBidsBars: [TableBidBarData] {
+        var data: [TableBidBarData] = []
+        for round in game.sortedRounds {
+            let label = "M\(round.number)"
+            let total = round.entries.reduce(0) { $0 + $1.bid }
+            data.append(TableBidBarData(roundLabel: label, totalBids: total, cardsDealt: round.cardsDealt))
+        }
+        return data
     }
     
     public var body: some View {
@@ -50,32 +142,18 @@ public struct GameChartsView: View {
                 .fontWeight(.bold)
                 .foregroundColor(PirateTheme.gold)
             
-            Chart {
-                ForEach(game.sortedParticipants) { part in
-                    let playerColor = Color(hex: part.player?.colorHex ?? "#FFFFFF")
-                    let entries = part.roundEntries.sorted { ($0.round?.number ?? 0) < ($1.round?.number ?? 0) }
-                    
-                    LineMark(
-                        x: .value("Manche", 0),
-                        y: .value("Score", 0)
-                    )
-                    .foregroundStyle(playerColor)
-                    
-                    ForEach(entries) { entry in
-                        let rNum = entry.round?.number ?? 0
-                        LineMark(
-                            x: .value("Manche", rNum),
-                            y: .value("Score", entry.cumulativeScore)
-                        )
-                        .foregroundStyle(by: .value("Joueur", part.player?.name ?? ""))
-                        
-                        PointMark(
-                            x: .value("Manche", rNum),
-                            y: .value("Score", entry.cumulativeScore)
-                        )
-                        .foregroundStyle(playerColor)
-                    }
-                }
+            Chart(scorePoints) { item in
+                LineMark(
+                    x: .value("Manche", item.roundNumber),
+                    y: .value("Score", item.score)
+                )
+                .foregroundStyle(by: .value("Joueur", item.playerName))
+                
+                PointMark(
+                    x: .value("Manche", item.roundNumber),
+                    y: .value("Score", item.score)
+                )
+                .foregroundStyle(Color(hex: item.colorHex))
             }
             .chartLegend(.visible)
             .chartXScale(domain: 0...game.plannedRounds)
@@ -86,37 +164,26 @@ public struct GameChartsView: View {
     // MARK: - Rank Bump Chart
     
     private var rankBumpChart: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let n = game.participants.count
+        
+        return VStack(alignment: .leading, spacing: 6) {
             Text("Bump Chart – Évolution des rangs")
                 .font(.caption)
                 .fontWeight(.bold)
                 .foregroundColor(PirateTheme.gold)
             
-            let rounds = game.sortedRounds
-            let n = game.participants.count
-            
-            Chart {
-                ForEach(game.sortedParticipants) { part in
-                    let playerColor = Color(hex: part.player?.colorHex ?? "#FFFFFF")
-                    
-                    ForEach(rounds) { round in
-                        let roundEntries = round.entries.sorted { $0.cumulativeScore > $1.cumulativeScore }
-                        if let rankIndex = roundEntries.firstIndex(where: { $0.participant?.id == part.id }) {
-                            let rank = rankIndex + 1
-                            LineMark(
-                                x: .value("Manche", round.number),
-                                y: .value("Rang", rank)
-                            )
-                            .foregroundStyle(by: .value("Joueur", part.player?.name ?? ""))
-                            
-                            PointMark(
-                                x: .value("Manche", round.number),
-                                y: .value("Rang", rank)
-                            )
-                            .foregroundStyle(playerColor)
-                        }
-                    }
-                }
+            Chart(rankPoints) { item in
+                LineMark(
+                    x: .value("Manche", item.roundNumber),
+                    y: .value("Rang", item.rank)
+                )
+                .foregroundStyle(by: .value("Joueur", item.playerName))
+                
+                PointMark(
+                    x: .value("Manche", item.roundNumber),
+                    y: .value("Rang", item.rank)
+                )
+                .foregroundStyle(Color(hex: item.colorHex))
             }
             .chartYScale(domain: .automatic(reversed: true))
             .chartYAxis {
@@ -135,17 +202,13 @@ public struct GameChartsView: View {
                 .fontWeight(.bold)
                 .foregroundColor(PirateTheme.gold)
             
-            Chart {
-                ForEach(game.sortedRounds) { round in
-                    ForEach(round.entries) { entry in
-                        BarMark(
-                            x: .value("Manche", "M\(round.number)"),
-                            y: .value("Points", entry.points)
-                        )
-                        .foregroundStyle(by: .value("Joueur", entry.participant?.player?.name ?? ""))
-                        .position(by: .value("Joueur", entry.participant?.player?.name ?? ""))
-                    }
-                }
+            Chart(roundBars) { item in
+                BarMark(
+                    x: .value("Manche", item.roundLabel),
+                    y: .value("Points", item.points)
+                )
+                .foregroundStyle(by: .value("Joueur", item.playerName))
+                .position(by: .value("Joueur", item.playerName))
             }
             .frame(height: 220)
         }
@@ -160,23 +223,19 @@ public struct GameChartsView: View {
                 .fontWeight(.bold)
                 .foregroundColor(PirateTheme.gold)
             
-            Chart {
-                ForEach(game.sortedRounds) { round in
-                    let totalBids = round.entries.reduce(0) { $0 + $1.bid }
-                    
-                    BarMark(
-                        x: .value("Manche", "M\(round.number)"),
-                        y: .value("Paris", totalBids)
-                    )
-                    .foregroundStyle(PirateTheme.gold)
-                    
-                    LineMark(
-                        x: .value("Manche", "M\(round.number)"),
-                        y: .value("Cartes", round.cardsDealt)
-                    )
-                    .foregroundStyle(PirateTheme.oceanBlue)
-                    .lineStyle(StrokeStyle(lineWidth: 3, dash: [4, 4]))
-                }
+            Chart(tableBidsBars) { item in
+                BarMark(
+                    x: .value("Manche", item.roundLabel),
+                    y: .value("Paris", item.totalBids)
+                )
+                .foregroundStyle(PirateTheme.gold)
+                
+                LineMark(
+                    x: .value("Manche", item.roundLabel),
+                    y: .value("Cartes", item.cardsDealt)
+                )
+                .foregroundStyle(PirateTheme.oceanBlue)
+                .lineStyle(StrokeStyle(lineWidth: 3, dash: [4, 4]))
             }
             .frame(height: 220)
         }
@@ -201,7 +260,6 @@ public struct GameChartsView: View {
             
             ScrollView(.horizontal, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 4) {
-                    // Header of rounds
                     HStack(spacing: 4) {
                         Text("")
                             .frame(width: 60, height: 26)
@@ -214,7 +272,6 @@ public struct GameChartsView: View {
                         }
                     }
                     
-                    // Each player row
                     ForEach(participants) { part in
                         HStack(spacing: 4) {
                             Text(part.player?.name.prefix(6) ?? "")
@@ -224,31 +281,35 @@ public struct GameChartsView: View {
                                 .frame(width: 60, height: 28, alignment: .leading)
                             
                             ForEach(rounds) { r in
-                                let cell = cells.first(where: { $0.playerId == part.player?.id && $0.roundNumber == r.number })
-                                if let c = cell {
-                                    VStack(spacing: 1) {
-                                        Text(c.isSuccess ? "✓" : "\(c.diff > 0 ? "+" : "")\(c.diff)")
-                                            .font(.system(size: 10, weight: .bold))
-                                            .foregroundColor(c.isSuccess ? PirateTheme.midnightNavy : .white)
-                                        Text("\(c.points)")
-                                            .font(.system(size: 7))
-                                            .foregroundColor(c.isSuccess ? PirateTheme.midnightNavy.opacity(0.8) : .white.opacity(0.8))
-                                    }
-                                    .frame(width: 38, height: 28)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 4)
-                                            .fill(c.isSuccess ? PirateTheme.emerald : PirateTheme.crimson.opacity(0.85))
-                                    )
-                                } else {
-                                    Rectangle()
-                                        .fill(PirateTheme.deepNavy)
-                                        .frame(width: 38, height: 28)
-                                }
+                                heatmapCellView(for: part, round: r, cells: cells)
                             }
                         }
                     }
                 }
             }
+        }
+    }
+    
+    @ViewBuilder
+    private func heatmapCellView(for part: GameParticipant, round: Round, cells: [GameHeatmapCell]) -> some View {
+        if let c = cells.first(where: { $0.playerId == part.player?.id && $0.roundNumber == round.number }) {
+            VStack(spacing: 1) {
+                Text(c.isSuccess ? "✓" : "\(c.diff > 0 ? "+" : "")\(c.diff)")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(c.isSuccess ? PirateTheme.midnightNavy : .white)
+                Text("\(c.points)")
+                    .font(.system(size: 7))
+                    .foregroundColor(c.isSuccess ? PirateTheme.midnightNavy.opacity(0.8) : .white.opacity(0.8))
+            }
+            .frame(width: 38, height: 28)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(c.isSuccess ? PirateTheme.emerald : PirateTheme.crimson.opacity(0.85))
+            )
+        } else {
+            Rectangle()
+                .fill(PirateTheme.deepNavy)
+                .frame(width: 38, height: 28)
         }
     }
 }
