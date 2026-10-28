@@ -9,6 +9,18 @@ public struct StatsFilter {
     public var tag: String? = nil // nil = any
     public var requiredPlayerId: UUID? = nil // filter games where this player was present
     
+    public init(
+        timeRange: TimeRange = .allTime,
+        playerCount: Int? = nil,
+        tag: String? = nil,
+        requiredPlayerId: UUID? = nil
+    ) {
+        self.timeRange = timeRange
+        self.playerCount = playerCount
+        self.tag = tag
+        self.requiredPlayerId = requiredPlayerId
+    }
+    
     public enum TimeRange: String, CaseIterable, Identifiable {
         case allTime = "Tout l'historique"
         case lastMonth = "30 derniers jours"

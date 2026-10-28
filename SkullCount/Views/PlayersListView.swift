@@ -3,7 +3,7 @@ import SwiftData
 
 public struct PlayersListView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \.name) private var allPlayers: [Player]
+    @Query(sort: \Player.name) private var allPlayers: [Player]
     
     @State private var showingAddPlayerModal: Bool = false
     @State private var playerToEdit: Player? = nil

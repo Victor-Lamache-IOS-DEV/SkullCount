@@ -3,7 +3,7 @@ import SwiftData
 
 public struct GamesHistoryView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \.startedAt, order: .reverse) private var allGames: [Game]
+    @Query(sort: \Game.startedAt, order: .reverse) private var allGames: [Game]
     
     @State private var selectedGameForDetails: Game? = nil
     

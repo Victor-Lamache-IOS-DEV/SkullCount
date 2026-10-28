@@ -4,7 +4,7 @@ import SwiftData
 
 public struct StatsDashboardView: View {
     @Query private var allGames: [Game]
-    @Query(filter: #Predicate<Player> { !$0.isArchived }, sort: \.name)
+    @Query(filter: #Predicate<Player> { !$0.isArchived }, sort: \Player.name)
     private var allPlayers: [Player]
     
     @State private var selectedTab: StatsTab = .leaderboard

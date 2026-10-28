@@ -3,7 +3,7 @@ import SwiftData
 
 public struct HomeDashboardView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \.startedAt, order: .reverse) private var games: [Game]
+    @Query(sort: \Game.startedAt, order: .reverse) private var games: [Game]
     @Query private var players: [Player]
     
     @State private var showingNewGameSetup: Bool = false

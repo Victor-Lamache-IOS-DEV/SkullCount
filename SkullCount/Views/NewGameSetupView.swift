@@ -5,7 +5,7 @@ public struct NewGameSetupView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
-    @Query(filter: #Predicate<Player> { !$0.isArchived }, sort: \.name)
+    @Query(filter: #Predicate<Player> { !$0.isArchived }, sort: \Player.name)
     private var allPlayers: [Player]
     
     // Ordered table seats
