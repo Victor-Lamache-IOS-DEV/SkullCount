@@ -82,7 +82,7 @@ public struct GameHeatmapCell: Identifiable {
 // MARK: - Player Habit Item
 
 public struct PlayerHabitItem: Identifiable {
-    public var id: String { "\(cards)_\(bid)" }
+    public var id: String { "\(cards)_\(mostFrequentBid)" }
     public let cards: Int
     public let mostFrequentBid: Int
     public let bidCount: Int

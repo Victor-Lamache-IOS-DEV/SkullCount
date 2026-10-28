@@ -150,6 +150,10 @@ public final class RecordsService {
             let m = Int(lg.dur) / 60
             fame.append(RecordItem(title: "Plus longue épopée", category: "Temps", valueDescription: "\(m) minutes", holderName: "Équipage", date: lg.date, gameId: lg.gameId, isShame: false))
         }
+        if let sg = shortestGame {
+            let m = Int(sg.dur) / 60
+            fame.append(RecordItem(title: "Partie éclair", category: "Temps", valueDescription: "\(m) minutes", holderName: "Équipage", date: sg.date, gameId: sg.gameId, isShame: false))
+        }
         
         // Build Hall of Shame
         if let l = lowestScorePlayer {
@@ -171,7 +175,6 @@ public final class RecordsService {
         var zeroKingHolders = Set<String>()
         var shipwreckHolders = Set<String>()
         var mermaidHolders = Set<String>()
-        var streakHolders = Set<String>()
         
         for g in finishedGames {
             // Perfect game check (all bids successful in a game)
