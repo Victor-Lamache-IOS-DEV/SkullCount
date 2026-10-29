@@ -280,253 +280,74 @@ public struct StatsDashboardView: View {
         }
     }
     
-    // MARK: - 2. Exhaustive Player Profile Tab
+    // MARK: - 2. Minimalist Player Profile Cards Tab
     
-    @State private var selectedPlayerForProfile: Player? = nil
+    @State private var playerForDetailSheet: Player? = nil
     
     private var playerProfileTabContent: some View {
-        VStack(spacing: 16) {
-            // Player Selector
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(allPlayers) { player in
-                        let isSel = selectedPlayerForProfile?.id == player.id
-                        Button(action: { selectedPlayerForProfile = player }) {
-                            HStack(spacing: 4) {
-                                Text(player.emoji)
-                                Text(player.name)
-                                    .font(.caption)
-                                    .fontWeight(.bold)
-                            }
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .foregroundColor(isSel ? PirateTheme.midnightNavy : PirateTheme.parchment)
-                            .background(Capsule().fill(isSel ? PirateTheme.gold : PirateTheme.deepNavy))
-                        }
-                    }
-                }
-            }
-            .onAppear {
-                if selectedPlayerForProfile == nil { selectedPlayerForProfile = allPlayers.first }
-            }
-            
-            if let p = selectedPlayerForProfile {
-                let stats = StatsService.computeExhaustivePlayerProfile(player: p, allPlayers: allPlayers, games: allGames, filter: filter)
+        VStack(spacing: 10) {
+            ForEach(allPlayers) { player in
+                let elo = RatingService.computePlayerElo(for: player, allPlayers: allPlayers, games: allGames)
+                let playerGames = allGames.filter { g in g.participants.contains(where: { $0.player?.id == player.id }) }
+                let wins = playerGames.filter { g in g.participants.first(where: { $0.player?.id == player.id })?.finalRank == 1 }.count
+                let winRate = playerGames.isEmpty ? 0 : Double(wins) / Double(playerGames.count)
                 
-                // Key Metrics Grid
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    metricCard(title: "Parties jouées", value: "\(stats.totalGames)")
-                    metricCard(title: "Victoires (% vict.)", value: "\(stats.wins) (\(Int(stats.winRate * 100))%)")
-                    metricCard(title: "Rang normalisé moyen", value: "\(String(format: "%.2f", stats.normalizedRank))")
-                    metricCard(title: "Score moyen (médian)", value: "\(Int(stats.avgScore)) (\(Int(stats.medianScore)))")
-                    metricCard(title: "Régularité (Écart-type)", value: "±\(Int(stats.scoreStandardDeviation)) pts")
-                    metricCard(title: "Points / manche", value: "\(String(format: "%.1f", stats.avgPointsPerRound))")
-                }
-                
-                // Bidding Psychology & Habits Card
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Psychologie des Paris & Biais")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(PirateTheme.gold)
-                    
-                    Text("Taux de réussite global : \(Int(stats.overallSuccessRate * 100))% (\(stats.successBidsCount)/\(stats.totalBidsCount))")
-                        .font(.subheadline)
-                        .foregroundColor(PirateTheme.parchment)
-                    
-                    Text("Pari relatif moyen : \(String(format: "%.2f", stats.relativeBidAvg)) (Pari / Cartes)")
-                        .font(.caption)
-                        .foregroundColor(PirateTheme.parchment.opacity(0.8))
-                    
-                    Text("Biais moyen (Plis − Pari) : \(String(format: "%.2f", stats.avgBias))")
-                        .font(.caption)
-                        .foregroundColor(PirateTheme.gold)
-                    
-                    Text(stats.biasLabel)
-                        .font(.caption2)
-                        .fontWeight(.bold)
-                        .foregroundColor(PirateTheme.emerald)
-                    
-                    Text("Précision des échecs : \(Int(stats.missWithinOnePercent * 100))% des ratés sont à ±1 pli près.")
-                        .font(.caption2)
-                        .foregroundColor(PirateTheme.parchment.opacity(0.8))
-                    
-                    if !stats.habits.isEmpty {
-                        Divider().background(PirateTheme.cardBorder)
-                        Text("Habitudes récurrentes :")
-                            .font(.caption2)
-                            .fontWeight(.bold)
-                            .foregroundColor(PirateTheme.gold)
-                        ForEach(stats.habits.prefix(4)) { h in
-                            Text("• \(h.text)")
-                                .font(.caption2)
-                                .foregroundColor(PirateTheme.parchment.opacity(0.8))
-                        }
-                    }
-                }
-                .pirateCard()
-                
-                // Success Rate Breakdown by Cards & Turn Position
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Réussite par Position de Jeu & Nombre de Cartes")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(PirateTheme.gold)
-                    
-                    Chart {
-                        ForEach(1...10, id: \.self) { c in
-                            let rate = stats.successRateByCardsDealt[c] ?? 0
-                            BarMark(
-                                x: .value("Cartes", "\(c)c"),
-                                y: .value("Réussite", Int(rate * 100))
-                            )
-                            .foregroundStyle(PirateTheme.gold)
-                        }
-                    }
-                    .frame(height: 140)
-                    
-                    Text("Taux de réussite par ordre de parole (1er à jouer → dernier)")
-                        .font(.caption2)
-                        .foregroundColor(PirateTheme.parchment.opacity(0.7))
-                    
-                    HStack(spacing: 8) {
-                        ForEach(0..<6, id: \.self) { pos in
-                            let rate = stats.successRateByTurnPosition[pos] ?? 0
-                            VStack(spacing: 2) {
-                                Text("\(pos + 1)e")
-                                    .font(.caption2)
-                                    .foregroundColor(PirateTheme.gold)
-                                Text("\(Int(rate * 100))%")
-                                    .font(.system(size: 10))
-                                    .fontWeight(.bold)
-                                    .foregroundColor(PirateTheme.parchment)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 4)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(PirateTheme.deepNavy))
-                        }
-                    }
-                }
-                .pirateCard()
-                
-                // Bid x Tricks Matrix Heatmap
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Matrice Paris × Plis Réalisés")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(PirateTheme.gold)
-                    
-                    Text("La diagonale verte correspond aux paris réussis.")
-                        .font(.system(size: 10))
-                        .foregroundColor(PirateTheme.parchment.opacity(0.6))
-                    
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 6), spacing: 4) {
-                        ForEach(0..<6, id: \.self) { b in
-                            ForEach(0..<6, id: \.self) { t in
-                                let count = stats.bidTricksMatrix.first(where: { $0.bid == b && $0.tricks == t })?.count ?? 0
-                                let isSuccess = b == t
-                                VStack(spacing: 1) {
-                                    Text("\(b)p/\(t)t")
-                                        .font(.system(size: 8))
-                                        .foregroundColor(PirateTheme.parchment.opacity(0.5))
-                                    Text("\(count)")
-                                        .font(.caption2)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(count > 0 ? (isSuccess ? PirateTheme.emerald : PirateTheme.crimson) : PirateTheme.parchment.opacity(0.2))
-                                }
-                                .frame(height: 32)
-                                .frame(maxWidth: .infinity)
-                                .background(RoundedRectangle(cornerRadius: 4).fill(isSuccess ? PirateTheme.emerald.opacity(count > 0 ? 0.25 : 0.05) : PirateTheme.deepNavy))
-                            }
-                        }
-                    }
-                }
-                .pirateCard()
-                
-                // Rolling 5 Games Progression Chart
-                if stats.rollingFiveGamesAvgScores.count >= 2 {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Progression dans le temps (Moyenne glissante sur 5 parties)")
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundColor(PirateTheme.gold)
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    playerForDetailSheet = player
+                }) {
+                    HStack(spacing: 12) {
+                        Text(player.emoji)
+                            .font(.system(size: 28))
+                            .frame(width: 44, height: 44)
+                            .background(Circle().fill(Color(uiColor: .tertiarySystemFill)))
                         
-                        Chart {
-                            ForEach(stats.rollingFiveGamesAvgScores, id: \.gameIndex) { item in
-                                LineMark(
-                                    x: .value("Partie", item.gameIndex),
-                                    y: .value("Moyenne", item.avgScore)
-                                )
-                                .foregroundStyle(PirateTheme.emerald)
-                                PointMark(
-                                    x: .value("Partie", item.gameIndex),
-                                    y: .value("Moyenne", item.avgScore)
-                                )
-                                .foregroundStyle(PirateTheme.gold)
-                            }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(player.name)
+                                .font(.body.weight(.semibold))
+                                .foregroundColor(Color(hex: player.colorHex))
+                            
+                            Text("\(playerGames.count) parties • \(wins) vict. (\(Int(winRate * 100))%)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                         }
-                        .frame(height: 140)
-                    }
-                    .pirateCard()
-                }
-                
-                // Game Phases Performance
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Performance par Phase de Partie")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(PirateTheme.gold)
-                    
-                    HStack {
-                        phaseScoreBox(title: "Début (M1-3)", value: stats.earlyGameAvgPoints)
-                        phaseScoreBox(title: "Milieu (M4-7)", value: stats.midGameAvgPoints)
-                        phaseScoreBox(title: "Fin (M8-10)", value: stats.lateGameAvgPoints)
-                    }
-                }
-                .pirateCard()
-                
-                // Nemesis & Favorite Victim
-                if stats.nemesis != nil || stats.favoriteVictim != nil {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Affinités de Rivalité")
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundColor(PirateTheme.gold)
                         
-                        if let nem = stats.nemesis {
-                            HStack {
-                                Text("🎯 Bête noire :")
-                                    .font(.caption)
-                                    .foregroundColor(PirateTheme.crimson)
-                                Text("\(nem.player.emoji) \(nem.player.name)")
-                                    .font(.caption)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(PirateTheme.parchment)
-                                Spacer()
-                                Text("\(Int(nem.winRateAgainst * 100))% victoires (\(nem.games) duels)")
-                                    .font(.caption2)
-                                    .foregroundColor(PirateTheme.crimson)
-                            }
+                        Spacer()
+                        
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("\(Int(elo))")
+                                .font(.headline.weight(.bold))
+                                .foregroundColor(.orange)
+                            
+                            Text("ELO")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(.secondary)
                         }
-                        if let fav = stats.favoriteVictim {
-                            HStack {
-                                Text("⚔️ Victime favorite :")
-                                    .font(.caption)
-                                    .foregroundColor(PirateTheme.emerald)
-                                Text("\(fav.player.emoji) \(fav.player.name)")
-                                    .font(.caption)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(PirateTheme.parchment)
-                                Spacer()
-                                Text("\(Int(fav.winRateAgainst * 100))% victoires (\(fav.games) duels)")
-                                    .font(.caption2)
-                                    .foregroundColor(PirateTheme.emerald)
-                            }
-                        }
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundColor(Color(uiColor: .tertiaryLabel))
                     }
-                    .pirateCard()
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+                    )
                 }
+                .buttonStyle(.plain)
             }
+        }
+        .sheet(item: $playerForDetailSheet) { player in
+            PlayerDetailView(
+                player: player,
+                allPlayers: allPlayers,
+                allGames: allGames,
+                filter: filter
+            )
         }
     }
     

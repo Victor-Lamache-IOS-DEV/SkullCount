@@ -23,19 +23,21 @@ public struct HomeDashboardView: View {
                 
                 ScrollView {
                     VStack(spacing: 24) {
-                        // Title Banner
-                        VStack(spacing: 4) {
-                            Text("☠️ SKULL COUNT ☠️")
-                                .font(.system(size: 28, weight: .black, design: .serif))
-                                .foregroundColor(PirateTheme.gold)
-                                .shadow(color: PirateTheme.gold.opacity(0.4), radius: 6)
+                        // Clean Title Banner
+                        VStack(spacing: 6) {
+                            Image(systemName: "flag.2.crossed.fill")
+                                .font(.system(size: 40))
+                                .foregroundColor(.accentColor)
                             
-                            Text("Compteur & Journal de Bord – Édition Classique")
-                                .font(.caption)
-                                .fontWeight(.bold)
-                                .foregroundColor(PirateTheme.parchment.opacity(0.8))
+                            Text("SkullCount")
+                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                                .foregroundColor(.primary)
+                            
+                            Text("Compteur & Statistiques – Édition Classique")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
                         }
-                        .padding(.top, 10)
+                        .padding(.top, 16)
                         
                         // Primary Action : Nouvelle Partie
                         PirateButton(

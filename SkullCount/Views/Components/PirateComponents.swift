@@ -5,20 +5,19 @@ import SwiftUI
 public struct PirateCardModifier: ViewModifier {
     var backgroundColor: Color = PirateTheme.cardSurface
     var borderColor: Color = PirateTheme.cardBorder
-    var cornerRadius: CGFloat = 16
+    var cornerRadius: CGFloat = 14
     
     public func body(content: Content) -> some View {
         content
-            .padding()
+            .padding(12)
             .background(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(backgroundColor.opacity(0.85))
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(backgroundColor)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(borderColor.opacity(0.5), lineWidth: 1)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(borderColor, lineWidth: 0.5)
             )
-            .shadow(color: Color.black.opacity(0.35), radius: 6, x: 0, y: 3)
     }
 }
 
@@ -26,7 +25,7 @@ public extension View {
     func pirateCard(
         backgroundColor: Color = PirateTheme.cardSurface,
         borderColor: Color = PirateTheme.cardBorder,
-        cornerRadius: CGFloat = 16
+        cornerRadius: CGFloat = 14
     ) -> some View {
         self.modifier(PirateCardModifier(backgroundColor: backgroundColor, borderColor: borderColor, cornerRadius: cornerRadius))
     }
@@ -49,40 +48,34 @@ public struct PirateButton: View {
             HStack(spacing: 8) {
                 if let icon = icon {
                     Image(systemName: icon)
-                        .font(.headline)
+                        .font(.body.weight(.semibold))
                 }
                 Text(title)
-                    .font(.headline)
-                    .fontWeight(.bold)
+                    .font(.body.weight(.semibold))
             }
-            .foregroundColor(isEnabled ? (isDestructive ? .white : PirateTheme.midnightNavy) : .white.opacity(0.4))
+            .foregroundColor(isEnabled ? .white : Color(uiColor: .tertiaryLabel))
             .frame(maxWidth: .infinity)
-            .frame(height: 52)
+            .frame(height: 50)
             .background(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(
                         isEnabled
-                            ? (isDestructive ? PirateTheme.crimson : PirateTheme.gold)
-                            : PirateTheme.deepNavy.opacity(0.8)
+                            ? (isDestructive ? PirateTheme.crimson : Color.accentColor)
+                            : Color(uiColor: .tertiarySystemFill)
                     )
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(isEnabled ? (isDestructive ? PirateTheme.crimson : PirateTheme.lightGold) : PirateTheme.cardBorder, lineWidth: 1)
-            )
-            .shadow(color: isEnabled ? (isDestructive ? PirateTheme.crimson.opacity(0.4) : PirateTheme.gold.opacity(0.3)) : .clear, radius: 6, y: 3)
         }
         .disabled(!isEnabled)
         .accessibilityLabel(title)
     }
 }
 
-// MARK: - Pirate Circular Number Button
+// MARK: - Pirate Circular / Pill Number Button
 
 public struct PirateNumberButton: View {
     let number: Int
     let isSelected: Bool
-    var diameter: CGFloat = 48
+    var diameter: CGFloat = 40
     let action: () -> Void
     
     public var body: some View {
@@ -91,18 +84,17 @@ public struct PirateNumberButton: View {
             action()
         }) {
             Text("\(number)")
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundColor(isSelected ? PirateTheme.midnightNavy : PirateTheme.parchment)
+                .font(.system(size: 17, weight: isSelected ? .bold : .semibold, design: .rounded))
+                .foregroundColor(isSelected ? .white : Color(uiColor: .label))
                 .frame(width: diameter, height: diameter)
                 .background(
                     Circle()
-                        .fill(isSelected ? PirateTheme.gold : PirateTheme.cardSurface)
+                        .fill(isSelected ? Color.accentColor : Color(uiColor: .tertiarySystemFill))
                 )
                 .overlay(
                     Circle()
-                        .stroke(isSelected ? PirateTheme.lightGold : PirateTheme.cardBorder, lineWidth: isSelected ? 2 : 1)
+                        .stroke(isSelected ? Color.accentColor : Color(uiColor: .separator).opacity(0.3), lineWidth: isSelected ? 1.5 : 0.5)
                 )
-                .shadow(color: isSelected ? PirateTheme.gold.opacity(0.4) : Color.black.opacity(0.2), radius: isSelected ? 4 : 2, y: 1)
         }
         .accessibilityLabel("\(number)")
     }

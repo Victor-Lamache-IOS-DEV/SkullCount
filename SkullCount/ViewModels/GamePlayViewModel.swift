@@ -75,25 +75,29 @@ public final class GamePlayViewModel {
     
     // MARK: - Live Validations & Metrics
     
+    public func bid(for participantId: UUID) -> Int {
+        bids[participantId] ?? 0
+    }
+    
+    public func trick(for participantId: UUID) -> Int {
+        tricks[participantId] ?? 0
+    }
+    
     public var totalBids: Int {
-        bids.values.reduce(0, +)
+        game.participants.reduce(0) { $0 + (bids[$1.id] ?? 0) }
     }
     
     public var totalTricks: Int {
-        tricks.values.reduce(0, +)
+        game.participants.reduce(0) { $0 + (tricks[$1.id] ?? 0) }
     }
     
     public var isBiddingComplete: Bool {
-        for p in game.participants {
-            if bids[p.id] == nil { return false }
-        }
+        // Default is 0 for everyone: user can directly validate without tapping 0
         return true
     }
     
     public var isTricksComplete: Bool {
-        for p in game.participants {
-            if tricks[p.id] == nil { return false }
-        }
+        // Default is 0 for everyone
         return true
     }
     
@@ -115,30 +119,45 @@ public final class GamePlayViewModel {
     public func setTrick(for participantId: UUID, trick: Int) {
         tricks[participantId] = trick
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        
-        // Smart completion: If only 1 player is missing tricks, suggest/auto-set it if valid
-        let remainingParticipants = game.participants.filter { tricks[$0.id] == nil }
-        if remainingParticipants.count == 1 {
-            let lastPid = remainingParticipants[0].id
-            let needed = currentCardsDealt - totalTricks
-            if needed >= 0 && needed <= currentCardsDealt {
-                tricks[lastPid] = needed
-            }
+    }
+    
+    public func incrementTrick(for participantId: UUID) {
+        let current = tricks[participantId] ?? 0
+        if current < currentCardsDealt {
+            setTrick(for: participantId, trick: current + 1)
+        }
+    }
+    
+    public func decrementTrick(for participantId: UUID) {
+        let current = tricks[participantId] ?? 0
+        if current > 0 {
+            setTrick(for: participantId, trick: current - 1)
+        }
+    }
+    
+    public func incrementBid(for participantId: UUID) {
+        let current = bids[participantId] ?? 0
+        if current < currentCardsDealt {
+            setBid(for: participantId, bid: current + 1)
+        }
+    }
+    
+    public func decrementBid(for participantId: UUID) {
+        let current = bids[participantId] ?? 0
+        if current > 0 {
+            setBid(for: participantId, bid: current - 1)
         }
     }
     
     public func markSuccess(for participantId: UUID) {
-        if let bid = bids[participantId] {
-            setTrick(for: participantId, trick: bid)
-        }
+        let b = bids[participantId] ?? 0
+        setTrick(for: participantId, trick: b)
     }
     
     public func markAllSuccess() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         for p in game.participants {
-            if let bid = bids[p.id] {
-                tricks[p.id] = bid
-            }
+            tricks[p.id] = bids[p.id] ?? 0
         }
     }
     
@@ -256,7 +275,8 @@ public final class GamePlayViewModel {
     }
     
     public func getPreviewScore(for participantId: UUID) -> (points: Int, isSuccess: Bool)? {
-        guard let bid = bids[participantId], let trick = tricks[participantId] else { return nil }
+        let bid = bids[participantId] ?? 0
+        let trick = tricks[participantId] ?? 0
         let pBonus = piratesBonus[participantId] ?? 0
         let mBonus = mermaidBonus[participantId] ?? false
         let calc = ScoringEngine.calculateScore(

@@ -2,36 +2,40 @@ import Foundation
 import SwiftUI
 
 public enum PirateTheme {
-    // Colors
-    public static let midnightNavy = Color(red: 10/255, green: 22/255, blue: 40/255)
-    public static let deepNavy = Color(red: 18/255, green: 32/255, blue: 58/255)
-    public static let cardSurface = Color(red: 26/255, green: 43/255, blue: 74/255)
-    public static let cardBorder = Color(red: 45/255, green: 70/255, blue: 115/255)
+    // Apple-styled Clean Colors (Adaptive to Light & Dark)
+    public static let midnightNavy = Color(uiColor: .systemGroupedBackground)
+    public static let deepNavy = Color(uiColor: .secondarySystemGroupedBackground)
+    public static let cardSurface = Color(uiColor: .secondarySystemGroupedBackground)
+    public static let cardBorder = Color(uiColor: .separator).opacity(0.35)
     
-    public static let gold = Color(red: 235/255, green: 178/255, blue: 58/255)
-    public static let antiqueGold = Color(red: 198/255, green: 146/255, blue: 42/255)
-    public static let lightGold = Color(red: 255/255, green: 220/255, blue: 120/255)
+    // Refined Apple Accent Tints
+    public static let gold = Color.orange
+    public static let antiqueGold = Color.orange.opacity(0.85)
+    public static let lightGold = Color.yellow.opacity(0.7)
     
-    public static let parchment = Color(red: 244/255, green: 236/255, blue: 215/255)
-    public static let parchmentDark = Color(red: 216/255, green: 202/255, blue: 170/255)
+    // Clean System Typography Colors
+    public static let parchment = Color(uiColor: .label)
+    public static let parchmentDark = Color(uiColor: .secondaryLabel)
     
-    public static let crimson = Color(red: 214/255, green: 69/255, blue: 69/255)
-    public static let emerald = Color(red: 46/255, green: 184/255, blue: 114/255)
-    public static let oceanBlue = Color(red: 52/255, green: 152/255, blue: 219/255)
+    // Status Accents
+    public static let crimson = Color.red
+    public static let emerald = Color.green
+    public static let oceanBlue = Color.blue
+    public static let purple = Color.purple
     
     public static let playerPalette: [String] = [
-        "#E74C3C", // Pirate Red
-        "#E67E22", // Gold Orange
-        "#F1C40F", // Sun Gold
-        "#2ECC71", // Emerald Green
-        "#1ABC9C", // Turquoise
-        "#3498DB", // Ocean Blue
-        "#9B59B6", // Royal Purple
-        "#E84393", // Siren Pink
-        "#00CEC9", // Caribbean Cyan
-        "#6C5CE7", // Deep Indigo
-        "#F39C12", // Amber
-        "#A29BFE"  // Lavender
+        "#007AFF", // Apple Blue
+        "#34C759", // Apple Green
+        "#FF9500", // Apple Orange
+        "#FF2D55", // Apple Pink
+        "#AF52DE", // Apple Purple
+        "#5856D6", // Apple Indigo
+        "#FF3B30", // Apple Red
+        "#30B0C7", // Apple Teal
+        "#32ADE6", // Apple Cyan
+        "#FFCC00", // Apple Yellow
+        "#8E8E93", // Apple Gray
+        "#A2845E"  // Apple Brown
     ]
     
     public static let defaultEmojis: [String] = [
