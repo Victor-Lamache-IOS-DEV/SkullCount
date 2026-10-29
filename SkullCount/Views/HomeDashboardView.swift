@@ -70,22 +70,24 @@ public struct HomeDashboardView: View {
                                     HStack {
                                         Image(systemName: "play.circle.fill")
                                             .font(.title2)
-                                        VStack(alignment: .leading) {
+                                        VStack(alignment: .leading, spacing: 2) {
                                             Text("Reprendre la partie")
-                                                .font(.headline)
-                                            Text("\(activeGame.participants.count) pirates à table")
-                                                .font(.caption2)
-                                                .opacity(0.8)
+                                                .font(.body.weight(.semibold))
+                                            Text("Manche \(activeGame.rounds.count)/\(activeGame.plannedRounds) • \(activeGame.participants.count) joueurs")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
                                         }
                                         Spacer()
                                         Image(systemName: "chevron.right")
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundColor(.secondary)
                                     }
-                                    .foregroundColor(PirateTheme.midnightNavy)
-                                    .padding()
-                                    .background(RoundedRectangle(cornerRadius: 12).fill(PirateTheme.gold))
+                                    .padding(12)
+                                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color(uiColor: .secondarySystemGroupedBackground)))
+                                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Color.green.opacity(0.4), lineWidth: 1))
                                 }
+                                .buttonStyle(.plain)
                             }
-                            .pirateCard(backgroundColor: PirateTheme.deepNavy, borderColor: PirateTheme.emerald)
                         }
                         
                         // Dashboard Navigation Hub Grid
@@ -95,27 +97,16 @@ public struct HomeDashboardView: View {
                             }
                             
                             NavigationLink(destination: StatsDashboardView()) {
-                                hubTile(icon: "chart.bar.xaxis", title: "Statistiques", subtitle: "Records & ELO")
+                                hubTile(icon: "chart.bar.xaxis", title: "Statistiques", subtitle: "Classement & ELO")
                             }
                             
                             NavigationLink(destination: PlayersListView()) {
-                                hubTile(icon: "person.3.fill", title: "Équipage", subtitle: "\(players.count) pirates")
+                                hubTile(icon: "person.2.fill", title: "Joueurs", subtitle: "\(players.count) joueurs")
                             }
                             
-                            NavigationLink(destination: RulesReferenceView()) {
-                                hubTile(icon: "book.pages.fill", title: "Règles", subtitle: "66 cartes")
+                            NavigationLink(destination: SettingsView()) {
+                                hubTile(icon: "gearshape.fill", title: "Réglages", subtitle: "Sauvegarde & Données")
                             }
-                        }
-                        
-                        // Bottom Settings Link
-                        NavigationLink(destination: SettingsView()) {
-                            HStack {
-                                Image(systemName: "gearshape.fill")
-                                Text("Réglages & Sauvegarde JSON")
-                            }
-                            .font(.subheadline)
-                            .foregroundColor(PirateTheme.parchment.opacity(0.7))
-                            .padding(.top, 10)
                         }
                     }
                     .padding()
@@ -132,21 +123,22 @@ public struct HomeDashboardView: View {
     }
     
     private func hubTile(icon: String, title: String, subtitle: String) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 28))
-                .foregroundColor(PirateTheme.gold)
+                .font(.system(size: 26))
+                .foregroundColor(.accentColor)
             
             Text(title)
-                .font(.headline)
-                .foregroundColor(PirateTheme.parchment)
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(.primary)
             
             Text(subtitle)
                 .font(.caption2)
-                .foregroundColor(PirateTheme.parchment.opacity(0.6))
+                .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 100)
-        .pirateCard()
+        .frame(height: 94)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color(uiColor: .secondarySystemGroupedBackground)))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5))
     }
 }

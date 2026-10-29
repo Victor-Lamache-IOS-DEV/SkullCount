@@ -35,7 +35,7 @@ public struct StatsDashboardView: View {
                     
                     // Tab Picker
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 6) {
                             ForEach(StatsTab.allCases) { tab in
                                 let isSel = selectedTab == tab
                                 Button(action: {
@@ -43,19 +43,20 @@ public struct StatsDashboardView: View {
                                     selectedTab = tab
                                 }) {
                                     Text(tab.rawValue)
-                                        .font(.caption)
-                                        .fontWeight(.bold)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 8)
-                                        .foregroundColor(isSel ? PirateTheme.midnightNavy : PirateTheme.parchment)
-                                        .background(Capsule().fill(isSel ? PirateTheme.gold : PirateTheme.deepNavy))
+                                        .font(.subheadline)
+                                        .fontWeight(isSel ? .semibold : .regular)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 7)
+                                        .foregroundColor(isSel ? .white : Color(uiColor: .label))
+                                        .background(
+                                            Capsule().fill(isSel ? Color.primary : Color(uiColor: .tertiarySystemFill))
+                                        )
                                 }
                             }
                         }
                         .padding(.horizontal)
                         .padding(.vertical, 6)
                     }
-                    .background(PirateTheme.midnightNavy)
                     
                     ScrollView {
                         VStack(spacing: 16) {
@@ -297,15 +298,16 @@ public struct StatsDashboardView: View {
                     playerForDetailSheet = player
                 }) {
                     HStack(spacing: 12) {
-                        Text(player.emoji)
-                            .font(.system(size: 28))
-                            .frame(width: 44, height: 44)
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.secondary)
+                            .frame(width: 36, height: 36)
                             .background(Circle().fill(Color(uiColor: .tertiarySystemFill)))
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text(player.name)
                                 .font(.body.weight(.semibold))
-                                .foregroundColor(Color(hex: player.colorHex))
+                                .foregroundColor(.primary)
                             
                             Text("\(playerGames.count) parties • \(wins) vict. (\(Int(winRate * 100))%)")
                                 .font(.caption)

@@ -15,15 +15,14 @@ public struct PlayerDetailView: View {
                 VStack(spacing: 16) {
                     // Header Profile Card
                     HStack(spacing: 16) {
-                        Text(player.emoji)
+                        Image(systemName: "person.crop.circle.fill")
                             .font(.system(size: 48))
-                            .frame(width: 72, height: 72)
-                            .background(Circle().fill(Color(uiColor: .tertiarySystemFill)))
+                            .foregroundColor(.secondary)
                         
                         VStack(alignment: .leading, spacing: 4) {
                             Text(player.name)
                                 .font(.title2.weight(.bold))
-                                .foregroundColor(Color(hex: player.colorHex))
+                                .foregroundColor(.primary)
                             
                             let elo = RatingService.computePlayerElo(for: player, allPlayers: allPlayers, games: allGames)
                             HStack(spacing: 8) {
@@ -32,7 +31,7 @@ public struct PlayerDetailView: View {
                                     .foregroundColor(.secondary)
                                 Text("\(Int(elo))")
                                     .font(.subheadline.weight(.bold))
-                                    .foregroundColor(.orange)
+                                    .foregroundColor(.primary)
                             }
                         }
                         Spacer()

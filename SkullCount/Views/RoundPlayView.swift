@@ -21,7 +21,6 @@ public struct RoundPlayView: View {
             
             VStack(spacing: 0) {
                 headerBanner
-                phaseStatusBanner
                 
                 // Fitted Players list: spacing adjusts depending on count so no scrolling occurs
                 let players = viewModel.participantsInTurnOrder
@@ -34,7 +33,7 @@ public struct RoundPlayView: View {
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, 12)
-                .padding(.top, 6)
+                .padding(.top, 10)
                 
                 bottomActionBar
             }
@@ -52,14 +51,8 @@ public struct RoundPlayView: View {
             }
             
             ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 16) {
-                    Button(action: { viewModel.isScoresRevealed.toggle() }) {
-                        Image(systemName: viewModel.isScoresRevealed ? "eye.fill" : "eye.slash.fill")
-                    }
-                    
-                    Button(action: { showingScoresTable = true }) {
-                        Image(systemName: "tablecells")
-                    }
+                Button(action: { showingScoresTable = true }) {
+                    Image(systemName: "tablecells")
                 }
             }
         }
@@ -98,118 +91,40 @@ public struct RoundPlayView: View {
         }
     }
     
-    // MARK: - Header
+    // MARK: - Minimalist Header Banner
     
     private var headerBanner: some View {
         HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Manche \(viewModel.currentRoundIndex) / \(viewModel.game.plannedRounds)")
-                    .font(.headline)
-                    .fontWeight(.bold)
-                
-                HStack(spacing: 4) {
-                    Text("Ouvreur :")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text(viewModel.startingPlayerName)
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Color.accentColor)
-                }
-            }
+            Text("Manche \(viewModel.currentRoundIndex)/\(viewModel.game.plannedRounds)")
+                .font(.headline)
+                .fontWeight(.bold)
             
             Spacer()
             
-            HStack(spacing: 8) {
-                if viewModel.isScoresRevealed {
-                    Text("Scores visibles")
-                        .font(.caption2.weight(.medium))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Capsule().fill(Color.green.opacity(0.15)))
-                        .foregroundColor(.green)
+            if !viewModel.isResultsPhase {
+                Text("\(viewModel.totalBids)/\(viewModel.currentCardsDealt) paris")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            } else {
+                let missing = viewModel.tricksMissingCount
+                HStack(spacing: 4) {
+                    Text("\(viewModel.totalTricks)/\(viewModel.currentCardsDealt) plis")
+                        .font(.subheadline.weight(.semibold))
+                    if missing == 0 {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                            .font(.subheadline)
+                    }
                 }
-                
-                Text("\(viewModel.currentCardsDealt) carte\(viewModel.currentCardsDealt > 1 ? "s" : "")")
-                    .font(.subheadline.weight(.bold))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(Capsule().fill(Color(uiColor: .tertiarySystemFill)))
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.vertical, 10)
         .background(Color(uiColor: .secondarySystemGroupedBackground))
         .overlay(Divider(), alignment: .bottom)
     }
     
-    // MARK: - Phase Banner
-    
-    private var phaseStatusBanner: some View {
-        HStack {
-            if !viewModel.isResultsPhase {
-                let totalBids = viewModel.totalBids
-                let cards = viewModel.currentCardsDealt
-                let diff = totalBids - cards
-                
-                Image(systemName: "hand.raised.fill")
-                    .foregroundColor(.accentColor)
-                Text("Paris : \(totalBids) / \(cards) plis")
-                    .font(.subheadline.weight(.semibold))
-                
-                Spacer()
-                
-                if diff > 0 {
-                    Text("Surenchère +\(diff)")
-                        .font(.caption.weight(.bold))
-                        .foregroundColor(.red)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(Capsule().fill(Color.red.opacity(0.12)))
-                } else if diff < 0 {
-                    Text("Sous-enchère \(diff)")
-                        .font(.caption.weight(.bold))
-                        .foregroundColor(.green)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(Capsule().fill(Color.green.opacity(0.12)))
-                } else {
-                    Text("Équilibre")
-                        .font(.caption.weight(.bold))
-                        .foregroundColor(.orange)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(Capsule().fill(Color.orange.opacity(0.12)))
-                }
-            } else {
-                let totalTricks = viewModel.totalTricks
-                let cards = viewModel.currentCardsDealt
-                let missing = viewModel.tricksMissingCount
-                
-                Image(systemName: "flag.checkered")
-                    .foregroundColor(.accentColor)
-                Text("Plis : \(totalTricks) / \(cards)")
-                    .font(.subheadline.weight(.semibold))
-                
-                Spacer()
-                
-                if missing != 0 {
-                    Text(missing > 0 ? "Manque \(missing) pli(s)" : "Trop de plis (\(abs(missing)))")
-                        .font(.caption.weight(.bold))
-                        .foregroundColor(.red)
-                } else {
-                    Text("✓ Total exact")
-                        .font(.caption.weight(.bold))
-                        .foregroundColor(.green)
-                }
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 6)
-        .background(Color(uiColor: .systemGroupedBackground))
-    }
-    
-    // MARK: - Player Row (Ultra Compact, Zero Scroll)
+    // MARK: - Player Row (Pure Minimalist, No extra text, No vertical breaks)
     
     private func playerRow(participant: GameParticipant, compact: Bool) -> some View {
         let isLead = participant.seatIndex == viewModel.currentFirstPlayerIndex
@@ -218,33 +133,19 @@ public struct RoundPlayView: View {
         let maxCards = viewModel.currentCardsDealt
         
         return HStack(spacing: 8) {
-            // Player Avatar & Name
-            HStack(spacing: 4) {
+            // Player Lead indicator & Name (Strictly single-line, clean)
+            HStack(spacing: 6) {
                 if isLead {
-                    Image(systemName: "arrowtriangle.right.fill")
-                        .font(.system(size: 8))
-                        .foregroundColor(.accentColor)
+                    Circle()
+                        .fill(Color.primary)
+                        .frame(width: 6, height: 6)
                 }
                 
-                Text(participant.player?.emoji ?? "👤")
-                    .font(.system(size: compact ? 16 : 18))
-                
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(participant.player?.name ?? "Joueur")
-                        .font(.system(size: compact ? 13 : 14, weight: .semibold))
-                        .lineLimit(1)
-                    
-                    if viewModel.isScoresRevealed {
-                        let totalScore = participant.roundEntries
-                            .filter { ($0.round?.number ?? 0) < viewModel.currentRoundIndex }
-                            .reduce(0) { $0 + $1.points }
-                        Text("\(totalScore) pts")
-                            .font(.system(size: 10))
-                            .foregroundColor(.secondary)
-                    }
-                }
+                Text(participant.player?.name ?? "Joueur")
+                    .font(.system(size: compact ? 14 : 15, weight: .semibold))
+                    .lineLimit(1)
             }
-            .frame(width: compact ? 88 : 100, alignment: .leading)
+            .frame(width: compact ? 90 : 105, alignment: .leading)
             
             Spacer()
             
@@ -252,7 +153,6 @@ public struct RoundPlayView: View {
             if !viewModel.isResultsPhase {
                 // PHASE 1: BIDS INPUT (Default 0, direct fast tap or stepper)
                 if maxCards <= 5 {
-                    // All buttons fit side-by-side without scrolling
                     HStack(spacing: 4) {
                         ForEach(0...maxCards, id: \.self) { num in
                             let isSel = currentBid == num
@@ -263,14 +163,13 @@ public struct RoundPlayView: View {
                                     .frame(width: compact ? 26 : 30, height: compact ? 26 : 30)
                                     .background(
                                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                            .fill(isSel ? Color.accentColor : Color(uiColor: .tertiarySystemFill))
+                                            .fill(isSel ? Color.primary : Color(uiColor: .tertiarySystemFill))
                                     )
                             }
                             .buttonStyle(.plain)
                         }
                     }
                 } else {
-                    // Fast stepper + direct pills (0, 1, 2, 3...)
                     HStack(spacing: 4) {
                         ForEach(0...min(4, maxCards), id: \.self) { num in
                             let isSel = currentBid == num
@@ -281,18 +180,17 @@ public struct RoundPlayView: View {
                                     .frame(width: compact ? 24 : 28, height: compact ? 24 : 28)
                                     .background(
                                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                            .fill(isSel ? Color.accentColor : Color(uiColor: .tertiarySystemFill))
+                                            .fill(isSel ? Color.primary : Color(uiColor: .tertiarySystemFill))
                                     )
                             }
                             .buttonStyle(.plain)
                         }
                         
-                        // Stepper for higher bids
+                        // Compact Stepper for higher bids
                         HStack(spacing: 2) {
                             Button(action: { viewModel.decrementBid(for: participant.id) }) {
                                 Image(systemName: "minus")
                                     .font(.system(size: 11, weight: .bold))
-                                    .foregroundColor(.accentColor)
                                     .frame(width: compact ? 22 : 24, height: compact ? 24 : 28)
                                     .background(Color(uiColor: .tertiarySystemFill))
                                     .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -301,13 +199,11 @@ public struct RoundPlayView: View {
                             
                             Text("\(currentBid)")
                                 .font(.system(size: 14, weight: .bold, design: .rounded))
-                                .foregroundColor(currentBid > 4 ? .accentColor : Color(uiColor: .label))
                                 .frame(width: 22)
                             
                             Button(action: { viewModel.incrementBid(for: participant.id) }) {
                                 Image(systemName: "plus")
                                     .font(.system(size: 11, weight: .bold))
-                                    .foregroundColor(.accentColor)
                                     .frame(width: compact ? 22 : 24, height: compact ? 24 : 28)
                                     .background(Color(uiColor: .tertiarySystemFill))
                                     .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -317,27 +213,28 @@ public struct RoundPlayView: View {
                     }
                 }
             } else {
-                // PHASE 2: TRICKS RESULTS (Default 0, direct 1-tap success, quick buttons, or compact stepper)
-                HStack(spacing: 6) {
-                    // Quick "Success" pill: 1-tap if they made their bid
+                // PHASE 2: TRICKS INPUT (Bid indicator pill + Trick buttons / Stepper)
+                HStack(spacing: 8) {
+                    // Ultra-compact Bid indicator badge (1 tap marks success)
                     Button(action: { viewModel.markSuccess(for: participant.id) }) {
                         HStack(spacing: 2) {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 10, weight: .bold))
-                            Text("Pari (\(currentBid))")
-                                .font(.system(size: 11, weight: .semibold))
+                            Text("Pari")
+                                .font(.system(size: 11))
+                                .foregroundColor(currentTrick == currentBid ? .white : .secondary)
+                            Text("\(currentBid)")
+                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .foregroundColor(currentTrick == currentBid ? .white : .primary)
                         }
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 4)
-                        .foregroundColor(currentTrick == currentBid ? .white : .green)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 5)
                         .background(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(currentTrick == currentBid ? Color.green : Color.green.opacity(0.12))
+                                .fill(currentTrick == currentBid ? Color.green : Color(uiColor: .tertiarySystemFill))
                         )
                     }
                     .buttonStyle(.plain)
                     
-                    // Compact Stepper / Selector for Tricks
+                    // Tricks Input Buttons or Stepper
                     if maxCards <= 4 {
                         HStack(spacing: 3) {
                             ForEach(0...maxCards, id: \.self) { num in
@@ -349,7 +246,7 @@ public struct RoundPlayView: View {
                                         .frame(width: compact ? 22 : 26, height: compact ? 22 : 26)
                                         .background(
                                             RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                                .fill(isSel ? Color.accentColor : Color(uiColor: .tertiarySystemFill))
+                                                .fill(isSel ? Color.primary : Color(uiColor: .tertiarySystemFill))
                                         )
                                 }
                                 .buttonStyle(.plain)
@@ -357,32 +254,32 @@ public struct RoundPlayView: View {
                         }
                     } else {
                         // Compact Stepper (- [score] +)
-                        HStack(spacing: 3) {
+                        HStack(spacing: 4) {
                             Button(action: { viewModel.decrementTrick(for: participant.id) }) {
                                 Image(systemName: "minus")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .frame(width: 24, height: 24)
+                                    .font(.system(size: 11, weight: .bold))
+                                    .frame(width: 26, height: 26)
                                     .background(Color(uiColor: .tertiarySystemFill))
-                                    .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                             }
                             .buttonStyle(.plain)
                             
                             Text("\(currentTrick)")
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
-                                .frame(width: 22)
+                                .font(.system(size: 15, weight: .bold, design: .rounded))
+                                .frame(width: 24)
                             
                             Button(action: { viewModel.incrementTrick(for: participant.id) }) {
                                 Image(systemName: "plus")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .frame(width: 24, height: 24)
+                                    .font(.system(size: 11, weight: .bold))
+                                    .frame(width: 26, height: 26)
                                     .background(Color(uiColor: .tertiarySystemFill))
-                                    .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                             }
                             .buttonStyle(.plain)
                         }
                     }
                     
-                    // Bonus Capture Button
+                    // Optional bonus button if enabled
                     if viewModel.game.bonusEnabled {
                         Button(action: { bonusParticipant = participant }) {
                             let pB = viewModel.piratesBonus[participant.id] ?? 0
@@ -394,18 +291,10 @@ public struct RoundPlayView: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    
-                    // Preview Score Badge
-                    if let preview = viewModel.getPreviewScore(for: participant.id) {
-                        Text("\(preview.points > 0 ? "+" : "")\(preview.points)")
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .foregroundColor(preview.isSuccess ? .green : .red)
-                            .frame(minWidth: 32, alignment: .trailing)
-                    }
                 }
             }
         }
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 12)
         .padding(.vertical, compact ? 6 : 8)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -431,22 +320,19 @@ public struct RoundPlayView: View {
             } else {
                 HStack(spacing: 10) {
                     Button(action: { viewModel.markAllSuccess() }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "sparkles")
-                            Text("Tous réussi")
-                        }
-                        .font(.body.weight(.semibold))
-                        .foregroundColor(.green)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(Color.green.opacity(0.12))
-                        )
+                        Text("Tous réussi")
+                            .font(.body.weight(.semibold))
+                            .foregroundColor(.green)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(Color.green.opacity(0.12))
+                            )
                     }
                     
                     PirateButton(
-                        title: viewModel.currentRoundIndex >= viewModel.game.plannedRounds ? "Terminer la partie" : "Valider la manche",
+                        title: viewModel.currentRoundIndex >= viewModel.game.plannedRounds ? "Terminer" : "Valider la manche",
                         icon: "checkmark",
                         isEnabled: viewModel.isTricksSumValid
                     ) {
