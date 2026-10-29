@@ -164,4 +164,10 @@ public final class RatingService {
         
         return items
     }
+    
+    /// Returns the current ELO rating for a specific player
+    public static func computePlayerElo(for player: Player, allPlayers: [Player], games: [Game]) -> Double {
+        let leaderboard = computeLeaderboards(players: allPlayers, games: games)
+        return leaderboard.first(where: { $0.player.id == player.id })?.currentElo ?? initialElo
+    }
 }
