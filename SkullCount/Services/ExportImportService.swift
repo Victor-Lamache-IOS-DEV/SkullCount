@@ -242,4 +242,25 @@ public final class ExportImportService {
         try modelContext.save()
         return (playersImportedCount, gamesImportedCount)
     }
+    
+    // MARK: - Delete All Data
+    
+    public func deleteAllData(modelContext: ModelContext) throws {
+        let allGames = try modelContext.fetch(FetchDescriptor<Game>())
+        for g in allGames { modelContext.delete(g) }
+        
+        let allParts = try modelContext.fetch(FetchDescriptor<GameParticipant>())
+        for p in allParts { modelContext.delete(p) }
+        
+        let allRounds = try modelContext.fetch(FetchDescriptor<Round>())
+        for r in allRounds { modelContext.delete(r) }
+        
+        let allEntries = try modelContext.fetch(FetchDescriptor<RoundEntry>())
+        for e in allEntries { modelContext.delete(e) }
+        
+        let allPlayers = try modelContext.fetch(FetchDescriptor<Player>())
+        for p in allPlayers { modelContext.delete(p) }
+        
+        try modelContext.save()
+    }
 }

@@ -40,6 +40,7 @@ public struct SettingsView: View {
     
     @State private var statusMessage: String = ""
     @State private var showingStatusAlert: Bool = false
+    @State private var showingDeleteAllAlert: Bool = false
     
     // Hidden Demo Data trigger
     @State private var demoTapCount: Int = 0
@@ -141,6 +142,29 @@ public struct SettingsView: View {
                         }
                         .pirateCard()
                         
+                        // Danger Zone : Delete All Data
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Zone de danger")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(.red)
+                            
+                            Button(role: .destructive, action: {
+                                showingDeleteAllAlert = true
+                            }) {
+                                HStack {
+                                    Image(systemName: "trash.fill")
+                                    Text("Supprimer l'intégralité des données")
+                                }
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 44)
+                                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.red))
+                            }
+                        }
+                        .pirateCard()
+                        
                         // App Info & Secret Demo Data Generator
                         VStack(spacing: 6) {
                             Text("SkullCount v1.0.0")
@@ -206,6 +230,21 @@ public struct SettingsView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(statusMessage)
+            }
+            .alert("Supprimer toutes les données ?", isPresented: $showingDeleteAllAlert) {
+                Button("Tout effacer", role: .destructive) {
+                    do {
+                        try ExportImportService.shared.deleteAllData(modelContext: modelContext)
+                        statusMessage = "Toutes les données ont été supprimées avec succès."
+                        showingStatusAlert = true
+                    } catch {
+                        statusMessage = "Erreur de suppression : \(error.localizedDescription)"
+                        showingStatusAlert = true
+                    }
+                }
+                Button("Annuler", role: .cancel) {}
+            } message: {
+                Text("Cette action est irréversible. Tous les joueurs, parties et historiques seront définitivement effacés.")
             }
         }
     }
